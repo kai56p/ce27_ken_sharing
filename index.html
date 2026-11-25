@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CE27 Study &amp; Notes Hub</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/marked@14.1.3/marked.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+  <script defer src="notes.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <div>
+        <h1 id="site-title">CE27 Topic Series</h1>
+        <p id="site-subtitle" class="muted"></p>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap layout">
+    <aside class="sidebar">
+      <h2>Notes</h2>
+      <ul id="note-list" class="note-list"></ul>
+    </aside>
+
+    <article id="note-view" class="panel">
+      <p class="muted">Select a note to begin.</p>
+    </article>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    function renderMarkdownInto(el, mdText) {
+      el.innerHTML = marked.parse(mdText);
+      if (window.renderMathInElement) {
+        renderMathInElement(el, {
+          delimiters: [
+            { left: "$$", right: "$$", display: true },
+            { left: "$", right: "$", display: false }
+          ],
+          throwOnError: false
+        });
+      }
+    }
+
+    function buildYouTubeEmbed(ytId) {
+      if (!ytId) return "";
+      const safeId = ytId.replace(/[^a-zA-Z0-9_-]/g, "");
+      return `
+        <div class="video-box">
+          <iframe
+            src="https://www.youtube-nocookie.com/embed/${safeId}"
+            title="Unlisted lecture video"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen>
+          </iframe>
+        </div>`;
+    }
+
+    let activeIndex = 0;
+
+    function renderSidebar() {
+      $("note-list").innerHTML = NOTES.map((n, idx) => {
+        const activeCls = idx === activeIndex ? "active" : "";
+        return `
+          <li>
+            <button class="note-btn ${activeCls}" onclick="selectNote(${idx})">
+              <span>${n.title}</span>
+            </button>
+          </li>`;
+      }).join("");
+    }
+
+    function selectNote(idx) {
+      activeIndex = idx;
+      renderSidebar();
+      const note = NOTES[idx];
+      const view = $("note-view");
+
+      view.innerHTML = `
+        <h2>${note.title}</h2>
+        <p class="meta">${note.date || ""} ${note.summary ? "• " + note.summary : ""}</p>
+        ${buildYouTubeEmbed(note.youtubeId)}
+        <div id="md-body" class="md-body"></div>`;
+      renderMarkdownInto($("md-body"), note.markdown || "");
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      $("site-title").textContent = TOPIC_CONFIG.title;
+      $("site-subtitle").textContent = TOPIC_CONFIG.subtitle;
+      document.title = TOPIC_CONFIG.title;
+      selectNote(0);
+    });
+  </script>
+</body>
+</html>
